@@ -1,0 +1,103 @@
+---
+title: "Visualizing Data with ggplot2"
+output:
+  html_document: default
+  html_notebook: default
+---
+
+The topics discussed will be: ggplot2, Inkscape, and Circos.
+We will use shipment data from Freight Analysis Framework, a survey conducted by US Bureau of Transportation. The data represents agriculture exports from California to the rest of the U.S. It also include population of each destination state. The shipments are in units of mass. All the data are for 2012.
+
+
+```{r, echo=TRUE}
+a=read.csv("FAFdata.csv")
+head(a)
+```
+
+ggplot2 follows the rules of grammar of graphics, which essentially means building a graphic with multiple layers. A good source for introduction is the open source book R for Data Science(https://r4ds.had.co.nz/). We will see an example of how ggplot2 works.
+![](grammarofgraphics.png)
+
+```{r}
+library("ggplot2") #install the package (only once) and import it
+FAFdata=a[7:12,]
+ggplot(data = FAFdata) + 
+  geom_point(mapping = aes(x=DMS.DEST,y=Population_Dest_2012))
+```
+
+In ggplot2, each additional component is specified with the "+" sign. A generic template to write code in ggplot is:  
+
+ggplot(data = DATA) + 
+  GEOM_FUNCTION(mapping = aes(MAPPINGS))
+  
+You start with the code ggplot, which creates a coordinates system where you can add additional layers. Data is your fist layer. GEOM_Fuction or geometrics is your second layer. Here you can specify whether you would like to draw a scatter plot (geom_point), or a barplot (geom_bar) etc. ggplot2 provides over 30 geoms (can obtain more with extension packages).  
+
+aes, the third layer, is short for aesthetic. It specifies the visual property of the object in your plot. Aesthetics can include specifying the size, the shape, or the color of your points.
+
+
+```{r}
+ggplot(data = FAFdata) + 
+  geom_point(mapping = aes(x=DMS.DEST,y=Population_Dest_2012,shape=DMS.DEST,size=Total.M..in.2012,color=Total.KTons.in.2012))
+```
+
+The advantage of aes feature is that it enables visualizing data in multiple dimensions without having to deal with 3D graphs. Here, we visualize, a state's population, total import values, and weight of the imports.
+
+```{r}
+ggplot(data = FAFdata) + 
+  geom_point(mapping = aes(x=DMS.DEST,y=Population_Dest_2012,size=Total.M..in.2012,color=Total.KTons.in.2012))
+```
+
+One common problem when creating ggplot2 graphics is to put the + in the wrong place: it has to come at the end of the line, not the start. For example, follwoing code would give you an error:
+
+ggplot(data = FAFdata)  
+  + geom_point(mapping = aes(x=DMS.DEST,y=Population_Dest_2012))
+  
+Facets is another way (useful for categorical variables) to visualize multiple data points. Facets splits your plots into subplots that each display one subset of the data. Here, we present the data for each census region: Northeast, South, Midwest, and West.
+
+
+```{r}
+ggplot(data = a) + 
+  geom_point(mapping = aes(x=DMS.DEST,y=Population_Dest_2012,size=Total.KTons.in.2012)) +facet_wrap(~ Region, nrow  = 4) +  theme(axis.text.x=element_text(angle=90, hjust=1))
+```
+
+![](grammarofgraphics.png)
+
+
+Layer: statistics  
+
+We can calculate data statistics while plotting graphs. For example, just by plotting a bar graph of regions, R calculates counts of each region appearing in the data.
+
+```{r}
+ggplot(data = a) + 
+  geom_bar(mapping = aes(x = Region))
+```
+```{r}
+ggplot(data = a) + 
+  stat_summary(
+    mapping = aes(x=Region,y=Population_Dest_2012),
+    fun.ymin = "min",
+    fun.ymax = "max",
+    fun.y = "median"
+    )
+```
+```{r}
+ggplot(a, aes(x = Region, y = Population_Dest_2012)) +
+        geom_boxplot()
+```
+
+
+We will not go deep into the coordinate system layer. However, an easy trick to remember is coord_flip() to flip the charts to get horizontal charts.
+
+```{r}
+ggplot(a, aes(x = Region, y = Population_Dest_2012)) +
+        geom_boxplot()+ coord_flip()
+```
+
+While you can edit axis labels in ggplot2, we will cover how to do it in inkscape. For that let's save the graph to a pdf. PDF is a vector format and does not require specifying size for publishing requirements.  
+Caution: if you have many data points (>50) and are plotting them, do not save it as a pdf. Alternatly, you can save it as a TIFF, which would require specifying the resolution.
+
+```{r}
+pdf("boxplot.pdf")
+ggplot(a, aes(x = Region, y = Population_Dest_2012)) +
+        geom_boxplot()+ coord_flip()
+dev.off()
+```
